@@ -67,7 +67,7 @@ def take_review():
             c.grid(row=i + 3, column=j, columnspan=1, sticky=S)
 
     submit_review = Button(root2, text="Submit Review", font=(
-        'Arial', 20), padx=100, pady=20, command=lambda: [
+        'Arial', 20), padx=50, pady=10, command=lambda: [
         estimate(rev_tf.get())])
 
     req2.grid(row=7, column=0, columnspan=4, sticky=W + E)
@@ -141,7 +141,158 @@ def estimate(s):
         selected_foods = []
 
 def login():
-    pass
+    user = a1.get()
+    password = a2.get()
+    a1.set('')
+    a2.set('')
+    if (user == 'abc') and (password == '12345'):
+        win = Tk()
+        # win.configure(bg='skyblue')
+        win.geometry('1400x900')
+
+        def disp():
+            treev.delete(*treev.get_children())
+            conn = pymysql.connect(user='root', password='Tanmay..7920',
+                                           host='localhost', database='project1')
+            qur = 'select * from rest_table'
+            mycur = conn.cursor()
+            mycur.execute(qur)
+            result = mycur.fetchall()
+            for i in result:
+                treev.insert("", 'end', values=(i[0], i[1], i[2], i[3]))
+            mycur.close()
+            conn.close()
+
+        def percent():
+            # owner_food=cb.get()
+            conn = pymysql.connect(user='root', password='Tanmay..7920',
+                                           host='localhost', database='project1')
+            qur = 'select * from rest_table'
+            mycur = conn.cursor()
+            mycur.execute(qur)
+            result = mycur.fetchall()
+            per = []
+            for i in result:
+                food_name = i[0]
+                try:
+                    pos_percent = round((i[1] / i[3]) * 100, 1)
+                except ZeroDivisionError:
+                    pos_percent = 0
+
+                try:
+                    neg_percent = round((i[2] / i[3]) * 100, 1)
+                except ZeroDivisionError:
+                    neg_percent = 0
+                per.append((food_name, pos_percent, neg_percent))
+            return per
+
+        def plot(list1):
+            if sum(list1) != 0:
+                fig = Figure(figsize=(5, 3), dpi=100)
+                plot1 = fig.add_subplot(111)
+                name = ['POSITIVE', 'NEGATIVE']
+                plot1.pie(list1, labels=name, autopct="%0.1f%%",
+                          shadow=True, explode=[0.1, 0.1], colors=['b', 'r'])
+                global canvas
+                canvas = FigureCanvasTkAgg(fig,
+                                           master=win)
+                canvas.draw()
+                canvas.get_tk_widget().place(x=150, y=300)
+            else:
+                global n_l3
+                n_l3= Label(win, text='SORRY NO COUNT', height=2, fg='red', bd=5, relief='ridge',
+                           font=('times new roman', 18, 'bold'))
+                n_l3.place(x=300, y=400)
+
+        def per_show():
+            per1 = percent()
+            owner_food = cb.get()
+            for i in per1:
+                if owner_food == i[0]:
+                    pos_percent = i[1]
+                    neg_percent = i[2]
+                    print(pos_percent)
+                    print(neg_percent)
+                    name = ['POSITIVE', 'NEGATIVE']
+                    list1 = [pos_percent, neg_percent]
+                    plot(list1)
+
+
+        def clear_canvas():
+            canvas.get_tk_widget().destroy()
+            try:
+                n_l3.destroy()
+            except:
+                pass
+            try:
+                l21.destroy()
+            except:
+                pass
+
+
+        def clear():
+            treev.delete(*treev.get_children())
+
+
+        l1 = Label(win, text='REVIEW STATISTICAL ANALYSIS', height=2, width=40, relief='ridge',
+                   bd=5, font=('times new roman', 14, 'bold'))
+        l1.place(x=400, y=40)
+        b1 = Button(win, text='SHOW COUNT', command=disp, width=20, relief='ridge',
+                    bd=5, font=('times new roman', 14, 'bold'))
+        b1.place(x=100, y=120)
+        b2 = Button(win, text='EXIT', width=20, command=win.destroy, relief='ridge',
+                    bd=5, font=('times new roman', 14, 'bold'))
+        b2.place(x=400, y=120)
+
+        l2 = Label(win, text='Select food >>>>', width=20, relief='ridge',
+                   bd=5, font=('times new roman', 12, 'bold'))
+        l2.place(x=100, y=200)
+
+        n = StringVar()
+        cb = ttk.Combobox(win, textvariable=n)
+        cb['state'] = 'readonly'
+        cb['values'] = ("Idly", "Dosa", "Vada", "Roti", "Meals", "Veg Biryani",
+                        "Egg Biryani", "Chicken Biryani", "Mutton Biryani",
+                        "Ice Cream", "Noodles", "Manchooriya", "Orange juice",
+                        "Apple Juice", "Pineapple juice", "Banana juice")
+        cb.current(0)
+        cb.place(x=300, y=200, height=30)
+
+        b3 = Button(win, text='Percentage plot', width=20, command=per_show, relief='ridge',
+                    bd=5, font=('times new roman', 12, 'bold'))
+        b3.place(x=160, y=240)
+
+        # b4 = Button(win, text='Negative review > 40%', command=above40, relief='ridge',
+        #             bd=5, font=('times new roman', 12, 'bold'))
+        # b4.place(x=500, y=240)
+        b5 = Button(win, text='Clear Chart', command=clear_canvas, relief='ridge',
+                    bd=5, font=('times new roman', 12, 'bold'))
+        b5.place(x=360, y=600)
+        # b6 = Button(win, text='Negative review > 20%', command=above20, relief='ridge',
+        #             bd=5, font=('times new roman', 12, 'bold'))
+        # b6.place(x=500, y=200)
+
+        treev = ttk.Treeview(win, selectmode='browse', height=20)
+        treev.place(x=700, y=110, width=500)
+
+        treev["columns"] = ("1", "2", "3", "4")
+        treev['show'] = 'headings'
+
+        treev.column("1", width=90, anchor='c')
+        treev.column("2", width=90, anchor='se')
+        treev.column("3", width=90, anchor='se')
+        treev.column("4", width=90, anchor='se')
+
+        treev.heading("1", text="Food name")
+        treev.heading("2", text="Good review count")
+        treev.heading("3", text="Bad review count")
+        treev.heading("4", text="No of customer")
+        cleartbtn = Button(win, text=' Clear', width=20, command=clear)
+        cleartbtn.place(x=900, y=550)
+
+
+
+        win.mainloop()
 
 
 label = Label(root1, text="RESTAURANT REVIEW ANALYSIS SYSTEM",
